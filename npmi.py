@@ -13,13 +13,6 @@ import os, sys
 import argparse
 import pdb
 #from distutils.util import str2bool
-parser = argparse.ArgumentParser()
-parser.add_argument('--nfiles', type=int, default=0)
-parser.add_argument('--topic_wordf', type=str)
-parser.add_argument('--word_docf', type=str)
-parser.add_argument('--ntopics', type=int)
-args = parser.parse_args()
-
 
 # Custom imports
 import dataloader
@@ -60,8 +53,25 @@ def average_npmi_topics(topic_words, ntopics, word_doc_counts, nfiles):
                 w1_dc = len(word_doc_counts.get(w1, set()))
                 w2_dc = len(word_doc_counts.get(w2, set()))
 
-                pmi_w1w2 = np.log(((w1w2_dc * nfiles) + eps) / ((w1_dc * w2_dc) + eps))
+                # what we had previously:
+                #pmi_w1w2 = np.log(((w1w2_dc * nfiles) + eps) / ((w1_dc * w2_dc) + eps))
+
+                # Correct eps:
+                pmi_w1w2 = np.log((w1w2_dc * nfiles) / ((w1_dc * w2_dc) + eps) + eps)
                 npmi_w1w2 = pmi_w1w2 / (- np.log( (w1w2_dc)/nfiles + eps))
+
+                # Which is equivalent to this:
+                #if w1w2_dc ==0: 
+                #    npmi_w1w2 = -1
+                #else:
+                #    pmi_w1w2 = np.log( (w1w2_dc * nfiles)/ (w1_dc*w2_dc))
+                #    npmi_w1w2 = pmi_w1w2 / (-np.log (w1w2_dc/nfiles))
+
+
+
+                if npmi_w1w2>1 or npmi_w1w2<-1:
+                    print("NPMI score not bounded for:", w1, w2, " a bug?")
+                    sys.exit(1)
 
                 topic_score.append(npmi_w1w2)
 
@@ -77,4 +87,12 @@ def average_npmi_topics(topic_words, ntopics, word_doc_counts, nfiles):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--nfiles', type=int, default=0)
+    parser.add_argument('--topic_wordf', type=str)
+    parser.add_argument('--word_docf', type=str)
+    parser.add_argument('--ntopics', type=int)
+    args = parser.parse_args()
+
+
     main()
