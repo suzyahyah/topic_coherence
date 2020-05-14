@@ -30,7 +30,6 @@ def main():
         print("nfiles not provided - calculating from dataset:", len(total_docs))
         args.nfiles = len(total_docs)
 
-
     average_npmi_topics(topic_words, args.ntopics, word_doc_counts, args.nfiles)
 
 def average_npmi_topics(topic_words, ntopics, word_doc_counts, nfiles):
@@ -43,6 +42,9 @@ def average_npmi_topics(topic_words, ntopics, word_doc_counts, nfiles):
         topic_score = []
 
         ntopw = len(topic_words[k])
+
+        if ntopw<2:
+            sys.exit("number of words in cluster less than 2.. fix your cluster..")
 
         for i in range(ntopw-1):
             for j in range(i+1, ntopw):
@@ -57,6 +59,7 @@ def average_npmi_topics(topic_words, ntopics, word_doc_counts, nfiles):
                 #pmi_w1w2 = np.log(((w1w2_dc * nfiles) + eps) / ((w1_dc * w2_dc) + eps))
 
                 # Correct eps:
+
                 pmi_w1w2 = np.log((w1w2_dc * nfiles) / ((w1_dc * w2_dc) + eps) + eps)
                 npmi_w1w2 = pmi_w1w2 / (- np.log( (w1w2_dc)/nfiles + eps))
 
@@ -68,10 +71,14 @@ def average_npmi_topics(topic_words, ntopics, word_doc_counts, nfiles):
                 #    npmi_w1w2 = pmi_w1w2 / (-np.log (w1w2_dc/nfiles))
 
 
-
                 if npmi_w1w2>1 or npmi_w1w2<-1:
-                    print("NPMI score not bounded for:", w1, w2, " a bug?")
-                    sys.exit(1)
+                    print(f"warning: NPMI score not bounded for:{w1}, {w2}, \
+                            score:{np.around(npmi_score,5)} ... rounding off")
+
+                    if npmi_w1w2 > 1:
+                        npmi_w1w2 = 1
+                    elif npmi_w1w2 <-1:
+                        npmi_w1w2 = -1
 
                 topic_score.append(npmi_w1w2)
 
